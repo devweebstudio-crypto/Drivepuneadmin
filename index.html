@@ -17,7 +17,14 @@
     table th, table td { border: 1px solid #ddd; padding: 10px; font-size: 14px; }
     table th { background: #1a73e8; color: white; }
 
-    button { padding: 8px 15px; background: #1a73e8; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button {
+      padding: 8px 15px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
     button:hover { background: #0f5bd6; }
 
     .card {
@@ -31,7 +38,7 @@
     }
 
     .badge {
-      background: red; color: white; padding: 3px 10px;
+      background: red; color: white; padding: 4px 10px;
       border-radius: 20px; font-size: 12px;
     }
   </style>
@@ -39,7 +46,7 @@
 <body>
 
 <header>
-  <h1>Car Rental Admin Panel</h1>
+  <h1>DrivePune Admin Panel</h1>
 </header>
 
 <div class="container">
@@ -90,7 +97,7 @@
     <input type="text" id="carBrand" placeholder="Brand">
     <input type="text" id="carModel" placeholder="Model">
     <input type="text" id="carFuel" placeholder="Fuel Type">
-    <input type="number" id="carSeat" placeholder="Seating">
+    <input type="number" id="carSeat" placeholder="Seating Capacity">
     <input type="number" id="carPrice" placeholder="Price Per Day">
     <textarea id="carDesc" placeholder="Description"></textarea>
 
@@ -100,42 +107,48 @@
 </div>
 
 
+<!-- SCRIPT STARTS -->
 <script>
-const supabase = supabase.createClient(
+const client = supabase.createClient(
   "https://diqgdlodnjtuekouxjsz.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpcWdkbG9kbmp0dWVrb3V4anN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNzMwMDksImV4cCI6MjA3ODk0OTAwOX0.aK_CKsaEfHxYKvR68xDpWglkvNr5GxkiNNKqleR_mzA"
 );
 
+
 // -------- FETCH BOOKINGS ----------
 async function loadBookings() {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("bookings")
     .select("*, cars(name)");
 
-  if (data) {
-    let tbody = document.querySelector("#bookingTable tbody");
-    tbody.innerHTML = "";
-
-    let newCount = data.filter(b => b.status === "New").length;
-    document.getElementById("newBadge").innerText = newCount;
-    document.getElementById("newBadge").style.display = newCount > 0 ? "inline-block" : "none";
-
-    data.forEach(b => {
-      let tr = `
-        <tr>
-          <td>${b.id}</td>
-          <td>${b.cars.name}</td>
-          <td>${b.name}</td>
-          <td>${b.phone}</td>
-          <td>${b.start_date}</td>
-          <td>${b.end_date}</td>
-          <td>${b.location || '-'}</td>
-          <td>${b.status}</td>
-        </tr>
-      `;
-      tbody.innerHTML += tr;
-    });
+  if (error) {
+    console.log(error);
+    return;
   }
+
+  let tbody = document.querySelector("#bookingTable tbody");
+  tbody.innerHTML = "";
+
+  let newCount = data.filter(b => b.status === "New").length;
+  document.getElementById("newBadge").innerText = newCount;
+  document.getElementById("newBadge").style.display =
+    newCount > 0 ? "inline-block" : "none";
+
+  data.forEach(b => {
+    let tr = `
+      <tr>
+        <td>${b.id}</td>
+        <td>${b.cars?.name || "-"}</td>
+        <td>${b.name}</td>
+        <td>${b.phone}</td>
+        <td>${b.start_date}</td>
+        <td>${b.end_date}</td>
+        <td>${b.location || '-'}</td>
+        <td>${b.status}</td>
+      </tr>
+    `;
+    tbody.innerHTML += tr;
+  });
 }
 loadBookings();
 
@@ -157,7 +170,7 @@ function exportCSV() {
 
 // -------- LOAD CAR LIST ----------
 async function loadCars() {
-  const { data } = await supabase.from("cars").select("*");
+  const { data } = await client.from("cars").select("*");
 
   let tbody = document.querySelector("#carTable tbody");
   tbody.innerHTML = "";
@@ -197,9 +210,9 @@ async function addCar() {
     return;
   }
 
-  const { data, error } = await supabase.from("cars").insert([{
-    name, brand, model, fuel_type: fuel, seating: seat,
-    price_per_day: price, description: desc
+  const { error } = await client.from("cars").insert([{
+    name, brand, model, fuel_type: fuel,
+    seating: seat, price_per_day: price, description: desc
   }]);
 
   if (!error) {
@@ -213,9 +226,10 @@ async function addCar() {
 async function deleteCar(id) {
   if (!confirm("Delete this car?")) return;
 
-  await supabase.from("cars").delete().eq("id", id);
+  await client.from("cars").delete().eq("id", id);
   loadCars();
 }
 </script>
+
 </body>
 </html>

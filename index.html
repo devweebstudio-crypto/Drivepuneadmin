@@ -1,233 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin Panel - Car Rental</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DrivePune Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
-    header { background: #1a73e8; padding: 15px; color: #fff; text-align: center; }
-    .container { padding: 20px; }
-
-    h2 { margin-top: 40px; }
-
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
-    table th, table td { border: 1px solid #ddd; padding: 10px; font-size: 14px; }
-    table th { background: #1a73e8; color: white; }
-
-    button {
-      padding: 8px 15px;
-      background: #1a73e8;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover { background: #0f5bd6; }
-
-    .card {
-      background: white; padding: 20px; border-radius: 10px;
-      margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
-    input, select, textarea {
-      width: 100%; padding: 10px; margin: 10px 0;
-      border: 1px solid #ccc; border-radius: 5px;
-    }
-
-    .badge {
-      background: red; color: white; padding: 4px 10px;
-      border-radius: 20px; font-size: 12px;
-    }
-  </style>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+        h2 { margin-top: 40px; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }
+        input, select { width: 100%; padding: 10px; margin: 6px 0; }
+        button { padding: 12px; width: 100%; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .car-item { background: #e9e9e9; padding: 10px; margin: 10px 0; border-radius: 6px; }
+    </style>
 </head>
+
 <body>
 
-<header>
-  <h1>DrivePune Admin Panel</h1>
-</header>
-
 <div class="container">
+    <h1>🚗 DrivePune Admin Dashboard</h1>
 
-  <!-- NEW BOOKINGS BADGE -->
-  <h2>Bookings <span id="newBadge" class="badge" style="display:none;"></span></h2>
-  <button onclick="exportCSV()">Export CSV</button>
-
-  <table id="bookingTable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Car</th>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Location</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-
-  <!-- CAR LIST -->
-  <h2>Cars</h2>
-
-  <table id="carTable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Brand</th>
-        <th>Fuel</th>
-        <th>Seat</th>
-        <th>₹/Day</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <!-- ADD CAR -->
-  <h2>Add New Car</h2>
-  <div class="card">
-    <input type="text" id="carName" placeholder="Car Name">
-    <input type="text" id="carBrand" placeholder="Brand">
-    <input type="text" id="carModel" placeholder="Model">
-    <input type="text" id="carFuel" placeholder="Fuel Type">
-    <input type="number" id="carSeat" placeholder="Seating Capacity">
-    <input type="number" id="carPrice" placeholder="Price Per Day">
-    <textarea id="carDesc" placeholder="Description"></textarea>
+    <!-- Add Car -->
+    <h2>Add New Car</h2>
+    <input type="text" id="title" placeholder="Car Title (e.g., Swift Automatic)">
+    <input type="text" id="brand" placeholder="Brand (e.g., Maruti)">
+    <input type="number" id="year" placeholder="Year">
+    <input type="number" id="price_per_day" placeholder="Price Per Day">
+    <input type="text" id="image_url" placeholder="Image URL">
 
     <button onclick="addCar()">Add Car</button>
-  </div>
 
+    <h2>All Cars</h2>
+    <div id="carList">Loading...</div>
 </div>
 
-
-<!-- SCRIPT STARTS -->
 <script>
-const client = supabase.createClient(
-  "https://diqgdlodnjtuekouxjsz.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpcWdkbG9kbmp0dWVrb3V4anN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNzMwMDksImV4cCI6MjA3ODk0OTAwOX0.aK_CKsaEfHxYKvR68xDpWglkvNr5GxkiNNKqleR_mzA"
+/* -----------------------------------------
+   ✅ Initialize Supabase FIRST (Required)
+------------------------------------------*/
+const supabase = window.supabase.createClient(
+    "https://diqgdlodnjtuekouxjsz.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpcWdkbG9kbmp0dWVrb3V4anN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNzMwMDksImV4cCI6MjA3ODk0OTAwOX0.aK_CKsaEfHxYKvR68xDpWglkvNr5GxkiNNKqleR_mzA"
 );
 
-
-// -------- FETCH BOOKINGS ----------
-async function loadBookings() {
-  const { data, error } = await client
-    .from("bookings")
-    .select("*, cars(name)");
-
-  if (error) {
-    console.log(error);
-    return;
-  }
-
-  let tbody = document.querySelector("#bookingTable tbody");
-  tbody.innerHTML = "";
-
-  let newCount = data.filter(b => b.status === "New").length;
-  document.getElementById("newBadge").innerText = newCount;
-  document.getElementById("newBadge").style.display =
-    newCount > 0 ? "inline-block" : "none";
-
-  data.forEach(b => {
-    let tr = `
-      <tr>
-        <td>${b.id}</td>
-        <td>${b.cars?.name || "-"}</td>
-        <td>${b.name}</td>
-        <td>${b.phone}</td>
-        <td>${b.start_date}</td>
-        <td>${b.end_date}</td>
-        <td>${b.location || '-'}</td>
-        <td>${b.status}</td>
-      </tr>
-    `;
-    tbody.innerHTML += tr;
-  });
-}
-loadBookings();
-
-
-// -------- EXPORT TO CSV ----------
-function exportCSV() {
-  const rows = [...document.querySelectorAll("#bookingTable tr")];
-  const csv = rows.map(row =>
-      [...row.children].map(td => td.innerText).join(",")
-  ).join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "bookings.csv";
-  a.click();
-}
-
-
-// -------- LOAD CAR LIST ----------
-async function loadCars() {
-  const { data } = await client.from("cars").select("*");
-
-  let tbody = document.querySelector("#carTable tbody");
-  tbody.innerHTML = "";
-
-  data.forEach(car => {
-    let tr = `
-      <tr>
-        <td>${car.id}</td>
-        <td>${car.name}</td>
-        <td>${car.brand}</td>
-        <td>${car.fuel_type}</td>
-        <td>${car.seating}</td>
-        <td>${car.price_per_day}</td>
-        <td>
-          <button onclick="deleteCar(${car.id})">Delete</button>
-        </td>
-      </tr>
-    `;
-    tbody.innerHTML += tr;
-  });
-}
-loadCars();
-
-
-// -------- ADD CAR ----------
-async function addCar() {
-  let name = document.getElementById("carName").value;
-  let brand = document.getElementById("carBrand").value;
-  let model = document.getElementById("carModel").value;
-  let fuel = document.getElementById("carFuel").value;
-  let seat = document.getElementById("carSeat").value;
-  let price = document.getElementById("carPrice").value;
-  let desc = document.getElementById("carDesc").value;
-
-  if (!name || !brand || !fuel || !seat || !price) {
-    alert("Please fill required fields");
-    return;
-  }
-
-  const { error } = await client.from("cars").insert([{
-    name, brand, model, fuel_type: fuel,
-    seating: seat, price_per_day: price, description: desc
-  }]);
-
-  if (!error) {
-    alert("Car added!");
+/* -----------------------------------------
+   Load Cars After Page Fully Loads
+------------------------------------------*/
+document.addEventListener("DOMContentLoaded", () => {
     loadCars();
-  }
+});
+
+/* -----------------------------------------
+   Load cars from Supabase
+------------------------------------------*/
+async function loadCars() {
+    document.getElementById("carList").innerHTML = "Loading...";
+
+    const { data, error } = await supabase
+        .from("cars")
+        .select("*")
+        .order("id", { ascending: false });
+
+    if (error) {
+        console.error(error);
+        document.getElementById("carList").innerHTML = "Error loading cars.";
+        return;
+    }
+
+    document.getElementById("carList").innerHTML = "";
+
+    data.forEach(car => {
+        let div = document.createElement("div");
+        div.className = "car-item";
+        div.innerHTML = `
+            <b>${car.title}</b> (${car.brand}, ${car.year})<br>
+            ₹${car.price_per_day}/day<br>
+            <img src="${car.image_url}" width="200"><br><br>
+        `;
+        document.getElementById("carList").appendChild(div);
+    });
 }
 
+/* -----------------------------------------
+   Add a new car
+------------------------------------------*/
+async function addCar() {
+    let title = document.getElementById("title").value;
+    let brand = document.getElementById("brand").value;
+    let year = document.getElementById("year").value;
+    let price = document.getElementById("price_per_day").value;
+    let image = document.getElementById("image_url").value;
 
-// -------- DELETE CAR ----------
-async function deleteCar(id) {
-  if (!confirm("Delete this car?")) return;
+    if (!title || !brand || !year || !price || !image) {
+        alert("Please fill all fields");
+        return;
+    }
 
-  await client.from("cars").delete().eq("id", id);
-  loadCars();
+    const { data, error } = await supabase
+        .from("cars")
+        .insert([{ title, brand, year, price_per_day: price, image_url: image }]);
+
+    if (error) {
+        alert("Error: " + error.message);
+        return;
+    }
+
+    alert("Car Added Successfully!");
+    loadCars();
 }
 </script>
 
